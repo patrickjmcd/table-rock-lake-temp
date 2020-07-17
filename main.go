@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"log"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gocolly/colly"
@@ -44,18 +45,18 @@ func randomString() string {
 	return str
 }
 
-func getAnglerspyData(levelCh chan string, tempCh chan string) error {
+func getAnglerspyData() (error, string, string) {
 	url := "https://anglerspy.com/table-rock-lake-water-temperature-ipm/"
 	c := colly.NewCollector()
+	level := ""
+	temp := ""
 
 	c.OnHTML("#wrsn-temp-1", func(e *colly.HTMLElement) {
-		tempString := strings.TrimSuffix(e.Text, "°F")
-		tempCh <- tempString
+		temp = strings.TrimSuffix(e.Text, "°F")
 	})
 
 	c.OnHTML("#wrsn-temp-weather-1", func(e *colly.HTMLElement) {
-		levelString := strings.TrimSuffix(e.Text, "′")
-		levelCh <- levelString
+		level = strings.TrimSuffix(e.Text, "′")
 	})
 
 	c.OnRequest(func(r *colly.Request) {
@@ -64,7 +65,7 @@ func getAnglerspyData(levelCh chan string, tempCh chan string) error {
 
 	c.Visit(url)
 
-	return nil
+	return nil, level, temp
 }
 
 func updateMQTT(temperature string) error {
@@ -174,34 +175,29 @@ func updateInfluxdb(temperature string) error {
 
 func getLatestValues() string {
 
-	anglerspyLevelCh := make(chan string, 1)
-	anglerspyTempCh := make(chan string, 1)
-	getAnglerspyData(anglerspyLevelCh, anglerspyTempCh)
-	var l, t string
+	fetchErr, level, temp := getAnglerspyData()
+	fmt.Printf("Level: %s ft\nTemp: %s ºF\n", level, temp)
 
-	for i := 0; i < 2; i++ {
-		select {
-		case anglerSpyLevel := <-anglerspyLevelCh:
-			fmt.Printf("received anglerspy level %s ft\n", anglerSpyLevel)
-			l = anglerSpyLevel
-		case anglerSpyTemp := <-anglerspyTempCh:
-			fmt.Printf("received anglerspy temp %s ºF\n", anglerSpyTemp)
-			t = anglerSpyTemp
-		}
+	if fetchErr != nil {
+		log.Fatal("no results found")
 	}
-	err := updateMQTT(t)
+	if temp == "" {
+		log.Fatal("no temp data")
+	}
+	err := updateMQTT(temp)
 	if err != nil {
 		fmt.Printf("Couldn't send to MQTT: %s\n", err)
 	} else {
 		fmt.Println("Successfully wrote to MQTT")
 	}
-	err = updateInfluxdb(t)
+
+	err = updateInfluxdb(temp)
 	if err != nil {
 		fmt.Printf("Couldn't send to InfluxDB: %s\n", err)
 	} else {
 		fmt.Println("Successfully wrote to InfluxDB")
 	}
-	return fmt.Sprintf("Level: %s ft\nTemp: %s ºF\n", l, t)
+	return fmt.Sprintf("Level: %s ft\nTemp: %s ºF\n", level, temp)
 }
 
 func main() {
