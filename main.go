@@ -45,7 +45,7 @@ func randomString() string {
 	return str
 }
 
-func getAnglerspyData() (error, string, string) {
+func getAnglerspyData() (string, string, error) {
 	url := "https://anglerspy.com/table-rock-lake-water-temperature-ipm/"
 	c := colly.NewCollector()
 	level := ""
@@ -65,7 +65,7 @@ func getAnglerspyData() (error, string, string) {
 
 	c.Visit(url)
 
-	return nil, level, temp
+	return level, temp, nil
 }
 
 func updateMQTT(temperature string) error {
@@ -181,7 +181,7 @@ func updateInfluxdb(temperature string) error {
 
 func getLatestValues() string {
 
-	fetchErr, level, temp := getAnglerspyData()
+	level, temp, fetchErr := getAnglerspyData()
 	fmt.Printf("Level: %s ft\nTemp: %s ºF\n", level, temp)
 
 	if fetchErr != nil {
