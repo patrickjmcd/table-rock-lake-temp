@@ -113,7 +113,7 @@ func updateMQTT(temperature string) error {
 	return nil
 }
 
-func publishToInfluxdb(writeAPI api.WriteApiBlocking, prefix string, name string, value string) error {
+func publishToInfluxdb(writeAPI api.WriteAPIBlocking, prefix string, name string, value string) error {
 	fullName := fmt.Sprintf("%s%s", prefix, name)
 	units := "ºF"
 	if name == "level" {
@@ -172,7 +172,7 @@ func updateInfluxdb(temperature string) error {
 
 	influxdbURI := fmt.Sprintf("%s://%s:%s", protocol, server, port)
 	client := influxdb2.NewClient(influxdbURI, token)
-	writeAPI := client.WriteApiBlocking("", database)
+	writeAPI := client.WriteAPIBlocking("", database)
 
 	err := publishToInfluxdb(writeAPI, prefix, "temperature", temperature)
 
