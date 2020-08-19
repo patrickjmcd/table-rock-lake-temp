@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 	"strconv"
 	"strings"
 	"time"
-	"log"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gocolly/colly"
@@ -164,7 +164,13 @@ func updateInfluxdb(temperature string) error {
 		database = influxDatabase
 	}
 
-	influxdbURI := fmt.Sprintf("http://%s:%s", server, port)
+	protocol := "http"
+	envProtocol := os.Getenv("INFLUXDB_USE_SSL")
+	if envProtocol == "yes" {
+		protocol = "https"
+	}
+
+	influxdbURI := fmt.Sprintf("%s://%s:%s", protocol, server, port)
 	client := influxdb2.NewClient(influxdbURI, token)
 	writeAPI := client.WriteApiBlocking("", database)
 
@@ -182,7 +188,8 @@ func getLatestValues() string {
 		log.Fatal("no results found")
 	}
 	if temp == "" {
-		log.Fatal("no temp data")
+		fmt.Println("no temp data")
+		os.Exit(0)
 	}
 	err := updateMQTT(temp)
 	if err != nil {

@@ -1,9 +1,9 @@
 
 FROM golang
 
-WORKDIR /go/src/github.com/patrickjmcd/lake-info
+WORKDIR /go/src/github.com/patrickjmcd/table-rock-lake-temp
 ADD main.go .
 RUN go get -v -d
-RUN go install github.com/patrickjmcd/lake-info
+RUN go install github.com/patrickjmcd/table-rock-lake-temp
 
-ENTRYPOINT /go/bin/lake-info
+ENTRYPOINT /go/bin/table-rock-lake-temp
