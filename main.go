@@ -51,12 +51,12 @@ func getAnglerspyData() (string, string, error) {
 	level := ""
 	temp := ""
 
-	c.OnHTML("#wrsn-temp-1", func(e *colly.HTMLElement) {
+	c.OnHTML("#temp", func(e *colly.HTMLElement) {
 		temp = strings.TrimSuffix(e.Text, "°F")
 	})
 
-	c.OnHTML("#wrsn-temp-weather-1", func(e *colly.HTMLElement) {
-		level = strings.TrimSuffix(e.Text, "′")
+	c.OnHTML("#elevation", func(e *colly.HTMLElement) {
+		level = strings.TrimSuffix(e.Text, " ft")
 	})
 
 	c.OnRequest(func(r *colly.Request) {

@@ -3,6 +3,7 @@ FROM golang
 
 WORKDIR /go/src/github.com/patrickjmcd/table-rock-lake-temp
 ADD main.go .
+ADD go.mod .
 RUN go get -v -d
 RUN go install github.com/patrickjmcd/table-rock-lake-temp
 
